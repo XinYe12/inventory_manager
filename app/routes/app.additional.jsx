@@ -1,6 +1,6 @@
 // Import necessary modules and components
-import { json } from '@remix-run/node';
-import { useLoaderData } from '@remix-run/react';
+import { json, redirect } from '@remix-run/node';
+import { useLoaderData, useActionData } from '@remix-run/react';
 import {
   Box,
   Card,
@@ -10,14 +10,15 @@ import {
   Page,
   Text,
   BlockStack,
+  Button,
 } from "@shopify/polaris";
-import prisma  from '~/db.server'; // Adjust this import path to your project's structure
+import prisma from '~/db.server'; // Adjust this import path to your project's structure
+
 
 // Loader function to fetch data from the database
 export const loader = async () => {
   try {
     const purchaseOptions = await prisma.purchaseOption.findMany();
-    console.log("Loaded purchase options:", purchaseOptions);
     return json({ purchaseOptions });
   } catch (error) {
     console.error("Error loading purchase options:", error);
@@ -25,11 +26,30 @@ export const loader = async () => {
   }
 };
 
+// Action function to handle deletion
+export const action = async ({ request }) => {
+  const formData = new URLSearchParams(await request.text());
+  const deleteId = formData.get("deleteId");
+
+  if (deleteId) {
+
+      await prisma.purchaseOption.delete({
+              where: {
+                id: parseInt(deleteId),
+              },
+            });
+    console.log(`Item with ID ${deleteId} deleted`);
+  }
+
+  return redirect("/additional-page"); // Redirect to the same page or another appropriate location
+};
+
+
+
 // The main React component for the page
 export default function AdditionalPage() {
   const { purchaseOptions } = useLoaderData();
-  console.log("Purchase options in component:", purchaseOptions);
-
+  const actionData = useActionData();
 
   return (
     <Page>
@@ -38,38 +58,24 @@ export default function AdditionalPage() {
         <Layout.Section>
           <Card>
             <BlockStack gap="300">
-            <Text as="h2" variant="headingMd">
+              <Text as="h2" variant="headingMd">
                 Purchase Options
               </Text>
               {purchaseOptions.map((option) => (
-                <Text key={option.id} as="p" variant="bodyMd">
-                  {option.name}
-                </Text>
+                <div key={option.id} style={{ display: 'flex', alignItems: 'center' }}>
+                  <Text as="p" variant="bodyMd">
+                    {option.name}
+                  </Text>
+                  <form method="post" style={{ marginLeft: 'auto' }}>
+                    <input type="hidden" name="deleteId" value={option.id} />
+                    <Button submit>delete</Button>
+                  </form>
+                </div>
               ))}
             </BlockStack>
           </Card>
         </Layout.Section>
-        <Layout.Section variant="oneThird">
-          <Card>
-            <BlockStack gap="200">
-              <Text as="h2" variant="headingMd">
-                Resources
-              </Text>
-              <List>
-                <List.Item>
-                  <Link
-                    url="https://shopify.dev/docs/apps/design-guidelines/navigation#app-nav"
-                    target="_blank"
-                    removeUnderline
-                  >
-                    App nav best practices
-                  </Link>
-                </List.Item>
-              </List>
-             
-            </BlockStack>
-          </Card>
-        </Layout.Section>
+        {/* ... other sections ... */}
       </Layout>
     </Page>
   );
