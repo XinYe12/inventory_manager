@@ -3,6 +3,7 @@ import { json, redirect } from "@remix-run/node"; // Only one import of 'json'
 import { useActionData, useSubmit } from "@remix-run/react";
 import { Page, Layout, TextField, Card, Button } from "@shopify/polaris";
 import prisma from "../db.server";
+import PurchaseOptionName from "../purchaseOptions/purchaseOptionName";
 
 export const action = async ({ request }) => {
   const formData = await request.formData();
@@ -36,6 +37,7 @@ export default function Index() {
   const handleSubmit = (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+
     submit(formData, { method: "post" });
   };
 
