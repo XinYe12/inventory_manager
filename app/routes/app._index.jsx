@@ -1,64 +1,56 @@
+// Import necessary dependencies from Remix and React
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, useSubmit } from "@remix-run/react";
 import { useState } from "react";
-import { json, redirect } from "@remix-run/node"; // Only one import of 'json'
-import { useActionData, useSubmit } from "@remix-run/react";
-import { Page, Layout, TextField, Card, Button } from "@shopify/polaris";
+import { Page, Layout, Card, Button, Text } from "@shopify/polaris";
 import prisma from "../db.server";
-import PurchaseOptionName from "../purchaseOptions/purchaseOptionName";
 
-export const action = async ({ request }) => {
-  const formData = await request.formData();
-  const name = formData.get("name");
-
-  // Validate input
-  if (typeof name !== "string" || name.length === 0) {
-    return json({ error: "Invalid input" }, { status: 400 });
-  }
-
-  // Save to database
-  const purchaseOption = await prisma.purchaseOption.create({
-    data: {
-      name,
-    },
-  });
-
-  // Redirect or return success response
-  return json({ success: true, purchaseOption });
+// Loader to fetch purchase options
+export const loader = async () => {
+  const purchaseOptions = await prisma.purchaseOption.findMany();
+  return json(purchaseOptions);
 };
 
+// Action to handle deletion
+export const action = async ({ request }) => {
+  const formData = await request.formData();
+  const id = formData.get("id");
+
+  // Delete operation
+  if (id) {
+    await prisma.purchaseOption.delete({
+      where: { id: parseInt(id, 10) },
+    });
+  }
+
+  return null; // Redirect to refresh the list
+};
+
+// React component
 export default function Index() {
   const submit = useSubmit();
-  const actionData = useActionData();
-  const [inputValue, setInputValue] = useState("");
+  const purchaseOptions = useLoaderData();
 
-  const handleInputChange = (value) => {
-    setInputValue(value);
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-
+  const handleDelete = (id) => {
+    const formData = new FormData();
+    formData.append("id", id);
     submit(formData, { method: "post" });
   };
 
   return (
-    <Page title="Create Purchase Option">
+    <Page title="Purchase Options">
       <Layout>
         <Layout.Section>
-          <Card sectioned>
-            <form onSubmit={handleSubmit}>
-              <TextField
-                label="Purchase Option Name"
-                value={inputValue}
-                onChange={handleInputChange}
-                autoComplete="off"
-                name="name" // Ensure this matches what you're looking for in the action function
-              />
-              <Button submit primary>
-                Confirm Create
-              </Button>
-            </form>
-          </Card>
+          {purchaseOptions.map((option) => (
+            <Card key={option.id} sectioned>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p>{option.name}</p>
+                <Button destructive onClick={() => handleDelete(option.id)}>
+                  Delete
+                </Button>
+              </div>
+            </Card>
+          ))}
         </Layout.Section>
       </Layout>
     </Page>

@@ -1,22 +1,25 @@
-import { useCallback } from "react";
-import { Card, TextField } from "@shopify/polaris";
+// PurchaseOptionNameInput.jsx
 
-const PurchaseOptionName = ({ purchaseOptionName, onChange }) => {
-  const handleChange = useCallback((newValue) => {
-    onChange(newValue);
-  }, []);
+import { TextField } from "@shopify/polaris";
+import { useState, useCallback } from "react";
+
+const PurchaseOptionNameInput = ({ value, onChange }) => {
+  const handleInputChange = useCallback(
+    (newValue) => {
+      onChange(newValue);
+    },
+    [onChange]
+  );
 
   return (
-    <Card title="Deferred purchase option" sectioned>
-      <TextField
-        label="Set the deferred purchase option name"
-        placeholder="Name"
-        value={purchaseOptionName}
-        onChange={handleChange}
-        autoComplete="off"
-      />
-    </Card>
+    <TextField
+      label="Purchase Option Name"
+      value={value}
+      onChange={handleInputChange}
+      autoComplete="off"
+      name="name" // Ensure this matches what you're looking for in the action function
+    />
   );
 };
 
-export default PurchaseOptionName;
+export default PurchaseOptionNameInput;
