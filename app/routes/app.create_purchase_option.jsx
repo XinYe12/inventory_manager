@@ -1,12 +1,15 @@
 //app.create_purchase_option.jsx
 
-
 import { useState } from "react";
 import { json, redirect } from "@remix-run/node"; // Only one import of 'json'
 import { useActionData, useSubmit } from "@remix-run/react";
 import { Page, Layout, TextField, Card, Button } from "@shopify/polaris";
 import prisma from "../db.server";
-import PurchaseOptionNameInput from "../purchaseOptions/purchaseOptionName";
+
+//customized components
+import PurchaseOptionNameInput from "../purchaseOptions/purchaseOptionName";//text input field asking for purchase option name
+
+
 
 export const action = async ({ request }) => {
   const formData = await request.formData();
@@ -54,6 +57,7 @@ export default function Index() {
                     value={inputValue}
                     onChange={setInputValue}
                 />
+                
                 <Button submit primary>
                     Confirm Create
                 </Button>
