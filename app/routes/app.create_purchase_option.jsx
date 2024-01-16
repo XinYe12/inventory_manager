@@ -51,7 +51,7 @@ export const action = async ({ request }) => {
                     }
                     ]
                 }
-                resources: {productVariantIds: [], productIds: ["gid://shopify/Product/8028949512441"]}
+                resources: {productVariantIds: [], productIds: ["gid://shopify/Product/8030077419769"]}
             ) {
                 sellingPlanGroup {
                     id
@@ -64,7 +64,7 @@ export const action = async ({ request }) => {
     }`,
     );
     const responseJson = await response.json();
-    console.log(JSON.stringify(responseJson, null, 2));
+    console.log(JSON.stringify(responseJson, null,2 ));
     return null;
   };
   

@@ -1,9 +1,9 @@
-// Import necessary dependencies from Remix and React
-import { json, redirect } from "@remix-run/node";
-import { useLoaderData, useSubmit } from "@remix-run/react";
-import { useState } from "react";
-import { Page, Layout, Card, Button, Text } from "@shopify/polaris";
+// app/routes/index.jsx
+import { json } from "@remix-run/node";
+import { useLoaderData, useFetcher } from "@remix-run/react";
+import { Page, Layout, Button, Card, Text } from "@shopify/polaris";
 import prisma from "../db.server";
+import { authenticate } from "../shopify.server";
 
 // Loader to fetch purchase options
 export const loader = async () => {
@@ -11,44 +11,81 @@ export const loader = async () => {
   return json(purchaseOptions);
 };
 
-// Action to handle deletion
+// Action to handle GraphQL query and deletion
 export const action = async ({ request }) => {
   const formData = await request.formData();
   const id = formData.get("id");
+  const performQuery = formData.get("performQuery");
 
-  // Delete operation
+  // Perform the GraphQL query if requested
+  if (performQuery) {
+    const { admin } = await authenticate.admin(request);
+    const response = await admin.graphql(`
+    query GetSellingPlanGroupsByProduct($productGid: ID!) {
+        product(id: $productGid) {
+          id
+          title
+          sellingPlanGroups(first: 250) {
+            edges {
+              node {
+                id
+                name
+                sellingPlans(first: 2) {
+                  edges {
+                    node {
+                      id
+                      name
+                      options
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+    `);
+    const responseJson = await response.json();
+    console.log("GraphQL Query Response:", JSON.stringify(responseJson, null, 2));
+    // Optionally, handle the response here
+  }
+
+  // Handle deletion if an ID is provided
   if (id) {
     await prisma.purchaseOption.delete({
       where: { id: parseInt(id, 10) },
     });
   }
 
-  return null; // Redirect to refresh the list
+  return null; // Redirect to refresh the list or handle differently
 };
 
 // React component
 export default function Index() {
-  const submit = useSubmit();
+  const fetcher = useFetcher();
   const purchaseOptions = useLoaderData();
 
-  const handleDelete = (id) => {
+  const handlePrimaryAction = () => {
     const formData = new FormData();
-    formData.append("id", id);
-    submit(formData, { method: "post" });
+    formData.append("performQuery", "true"); // Indicate that the query should be executed
+    fetcher.submit(formData, { method: "post" });
   };
 
   return (
-    <Page title="Purchase Options">
+    <Page
+      title="Purchase Options"
+      primaryAction={{
+        content: 'Fetch Shop Info',
+        onAction: handlePrimaryAction,
+      }}
+    >
       <Layout>
         <Layout.Section>
-          {purchaseOptions.map((option) => (
-            <Card key={option.id} sectioned>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p>{option.name}</p>
-                <Button destructive onClick={() => handleDelete(option.id)}>
-                  Delete
-                </Button>
-              </div>
+          {purchaseOptions.map((option, index) => (
+            <Card key={index} sectioned>
+              <Text>{option.name}</Text>
+              {/* Other details from purchaseOptions can be displayed here */}
             </Card>
           ))}
         </Layout.Section>
